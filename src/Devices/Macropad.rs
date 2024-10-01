@@ -53,6 +53,8 @@ static MOUSE_DOWN: Mutex<bool> = Mutex::new(false);
 
 pub fn render_macropad(c: &Context, g: &mut G2d,mouse_position:[f64; 2], pressed:bool,port: &String,keypressed:Key,scroll_delta:f64)
 {
+
+
     let mut macro_number = MODE_SELECTED.lock().unwrap();
     let mut mode1 = MODE1_PROFILE.lock().unwrap();
     let mut mode2 = MODE2_PROFILE.lock().unwrap();
@@ -88,21 +90,19 @@ pub fn render_macropad(c: &Context, g: &mut G2d,mouse_position:[f64; 2], pressed
 
 
     Select_File_to_load(&c, g,mouse_position, pressed,keypressed,scroll_delta);
-    Upload_button(&c, g,mouse_position,pressed,port);
+
     renderlayerbuttons(&c, g,mouse_position,pressed);
     renderlightingmode(&c, g,mouse_position,pressed);
 
 
+    let mut lighting_mode = LIGHTING_MODE.lock().unwrap();
 
-
-let mut profile_open = PROFILE_OPEN.lock().unwrap();
-let mut mouse_down = MOUSE_DOWN.lock().unwrap();
-
-
-
-
+    let mut profile_open = PROFILE_OPEN.lock().unwrap();
+    let mut mouse_down = MOUSE_DOWN.lock().unwrap();
     let mut is_macro_open = CHANGING_MACRO.lock().unwrap();
     let mut macronumber = MACRONUMBER.lock().unwrap();
+    if(*lighting_mode == 0){
+        Upload_button(&c, g,mouse_position,pressed,port);
     if(pressed &&*mouse_down== false && *profile_open == false){
         if(*is_macro_open == false){
         if(number_selected > 0){
@@ -112,6 +112,14 @@ let mut mouse_down = MOUSE_DOWN.lock().unwrap();
         }
     }
     }
+}else
+{
+    //no macro tab
+    *is_macro_open = false;
+
+    //render lighting tab
+    lighting_tab(&c, g,mouse_position,pressed);
+}
 
 
     drop(mouse_down);
@@ -119,10 +127,15 @@ drop(profile_open);
 
 
 
+
+
     if(*is_macro_open){
         drop(is_macro_open);
         draw_2d_window_Macro(&c, g,mouse_position,pressed,*macronumber,keypressed,scroll_delta);
     }
+
+
+
 
 let mut mouse_down = MOUSE_DOWN.lock().unwrap();
     if(pressed == false){
@@ -179,19 +192,19 @@ fn load_profile()
                   // Process the line here
                   if(index < 9)
                   {
-                      mode1[index] =  convert_ascii_to_letters(string).to_string();
+                      mode1[index] =  string.to_string();
 
                   }else
                   {
                       if(index < 18)
                       {
-                          mode2[index-9] =  convert_ascii_to_letters(string).to_string();
+                          mode2[index-9] =  string.to_string();
 
                       }else
                       {
                           if(index < 27)
                           {
-                              mode3[index-18] =  convert_ascii_to_letters(string).to_string();
+                              mode3[index-18] =  string.to_string();
 
                           }else
                           {
@@ -233,8 +246,29 @@ fn load_profile()
 }
 }
 
+static SLIDER_VALUE_RED: Mutex<f64> = Mutex::new(0.0);
+static SLIDER_VALUE_GREEN: Mutex<f64> = Mutex::new(0.0);
+static SLIDER_VALUE_BLUE: Mutex<f64> = Mutex::new(0.0);
+static SLIDER_VALUE_PULSATION: Mutex<f64> = Mutex::new(0.0);
+static SLIDER_VALUE_BRIGHTNESS: Mutex<f64> = Mutex::new(0.0);
+fn lighting_tab(c: &Context, g: &mut G2d,mouse_position:[f64; 2], mouse_pressed:bool)
+{
+    rectangle([0.3,0.3,0.3, 1.0], // red
+          [20.0,50.0, 200.0, 350.0],
+          c.transform, g);
 
+          let mut value_red = SLIDER_VALUE_RED.lock().unwrap();
+          *value_red =Button::Slider_bar(&c, g,Point2d{point_x: 50.0, point_y:180.0},150.0, *value_red,mouse_pressed,mouse_position,1);
+          let mut value_green = SLIDER_VALUE_GREEN.lock().unwrap();
+          *value_green =Button::Slider_bar(&c, g,Point2d{point_x: 50.0, point_y:220.0},150.0, *value_green,mouse_pressed,mouse_position,2);
+          let mut value_blue = SLIDER_VALUE_BLUE.lock().unwrap();
+          *value_blue =Button::Slider_bar(&c, g,Point2d{point_x: 50.0, point_y:260.0},150.0, *value_blue,mouse_pressed,mouse_position,3);
+          let mut value_pulsation = SLIDER_VALUE_PULSATION.lock().unwrap();
+          *value_pulsation =Button::Slider_bar(&c, g,Point2d{point_x: 50.0, point_y:300.0},150.0, *value_pulsation,mouse_pressed,mouse_position,4);
+          let mut value_bright = SLIDER_VALUE_BRIGHTNESS.lock().unwrap();
+          *value_bright =Button::Slider_bar(&c, g,Point2d{point_x: 50.0, point_y:340.0},150.0, *value_bright,mouse_pressed,mouse_position,5);
 
+}
 
 
 fn load_profile_change()
@@ -262,19 +296,19 @@ fn load_profile_change()
                   // Process the line here
                   if(index < 9)
                   {
-                      mode1[index] =  convert_ascii_to_letters(string).to_string();
+                      mode1[index] =  string.to_string();
 
                   }else
                   {
                       if(index < 18)
                       {
-                          mode2[index-9] =  convert_ascii_to_letters(string).to_string();
+                          mode2[index-9] =  string.to_string();
 
                       }else
                       {
                           if(index < 27)
                           {
-                              mode3[index-18] =  convert_ascii_to_letters(string).to_string();
+                              mode3[index-18] =  string.to_string();
 
                           }else
                           {
@@ -452,7 +486,7 @@ fn draw_2d_window_Macro(c: &Context, g: &mut G2d,mouse_position:[f64; 2], button
 
 
 
-    *macro_mode=Button::Slider_button(&c, g,Point2d{point_x: position.point_x +5.0 , point_y: position.point_y+ 30.0},Vec::from(["Hight".to_string(), "type".to_string(), "Select".to_string()]),Point2d{point_x: 20.0, point_y:190.0}, *macro_mode,button_down,mouse_position,1.0);
+    *macro_mode=Button::Slider_button(&c, g,Point2d{point_x: position.point_x +5.0 , point_y: position.point_y+ 30.0},Vec::from(["Hight".to_string(), "Mode".to_string(), "Select".to_string()]),Point2d{point_x: 20.0, point_y:190.0}, *macro_mode,button_down,mouse_position,1.0);
 
 
 
@@ -531,14 +565,6 @@ fn draw_2d_window_Macro(c: &Context, g: &mut G2d,mouse_position:[f64; 2], button
 
 
 if(*macro_mode == 1){
-
-
-
-
-
-
-    let mut updated_str = mode1[button_number-1].to_string();
-    mode1[button_number-1] = draw_textbox_profile(&c, g,&Point2d{point_x: position.point_x+10.0, point_y:position.point_y+70.0}, &Point2d{point_x: 180.0, point_y:30.0},keypressed,&updated_str,mouse_position, button_down,&1);
 
 
 
@@ -725,9 +751,6 @@ fn Draw_box_Buttons(c: &Context, g: &mut G2d,mouse_position:[f64; 2], button_dow
     "esc0",
     "esc1",
     "esc2",
-    "fn0",
-    "fn1",
-    "fn2",
     "insert0",
     "insert1",
     "insert2",
@@ -737,21 +760,15 @@ fn Draw_box_Buttons(c: &Context, g: &mut G2d,mouse_position:[f64; 2], button_dow
     "pause0",
     "pause1",
     "pause2",
-    "calc0",
-    "calc1",
-    "calc2",
+    "os0",
+    "os1",
+    "os2",
     "enter0",
     "enter1",
     "enter2",
     "Back0",
     "Back1",
     "Back2",
-    "Volup0",
-    "Volup1",
-    "Volup2",
-    "Voldown0",
-    "Voldown1",
-    "Voldown2",
     "space0",
     "space1",
     "space2",
@@ -841,8 +858,8 @@ fn Draw_box_Buttons(c: &Context, g: &mut G2d,mouse_position:[f64; 2], button_dow
 let mut mouse_down = Mouse2.lock().unwrap();
 
 
-let input_string_original =insert_commas(&input);
-let mut input_string =insert_commas(&input);
+let input_string_original = input.clone();
+let mut input_string = input.clone();
 let mut groups: Vec<&str> = input_string.split(",").collect();
 let mut groups2: Vec<&str> = input_string.split(",").collect();
 
@@ -1038,6 +1055,15 @@ if(Keys.len()/5< 4){
                                     {
                                         input_string+= &insert_commas(&key);
                                     }
+                                }else
+                                {
+                                    if(input_string !=""){
+                                        input_string+= &(",".to_owned() +&Function_to_code(&key));
+                                    }else
+                                    {
+                                        input_string+= &Function_to_code(&key);
+                                    }
+
                                 }
 
 
@@ -1087,12 +1113,9 @@ if(Keys.len()/5< 4){
 
     if(input_string_original != input_string)
     {
-        if(input_string !=""){
-        return convert_ascii_to_letters(&input_string);
-    }else
-    {
+
         return input_string;
-    }
+
     }
     if(button_down == false)
     {
@@ -1103,6 +1126,64 @@ return input;
 
 
 }
+
+
+fn Function_to_code(string: &str) -> String {
+
+
+    let table = [
+        ("shift0".to_string(), "129,48".to_string()),
+        ("shift1".to_string(), "129,49".to_string()),
+        ("shift2".to_string(), "129,50".to_string()),
+        ("ctrl0".to_string(), "128,48".to_string()),
+        ("ctrl1".to_string(), "128,49".to_string()),
+        ("ctrl2".to_string(), "128,50".to_string()),
+        ("caps0".to_string(), "193,48".to_string()),
+        ("caps1".to_string(), "193,49".to_string()),
+        ("caps2".to_string(), "193,50".to_string()),
+        ("tab0".to_string(), "179,48".to_string()),
+        ("tab1".to_string(), "179,49".to_string()),
+        ("tab2".to_string(), "179,50".to_string()),
+        ("alt0".to_string(), "130,48".to_string()),
+        ("alt1".to_string(), "130,49".to_string()),
+        ("alt2".to_string(), "130,50".to_string()),
+        ("esc0".to_string(), "177,48".to_string()),
+        ("esc1".to_string(), "177,49".to_string()),
+        ("esc2".to_string(), "177,50".to_string()),
+        ("insert0".to_string(), "209,48".to_string()),
+        ("insert1".to_string(), "209,49".to_string()),
+        ("insert2".to_string(), "209,50".to_string()),
+        ("delete0".to_string(), "212,48".to_string()),
+        ("delete1".to_string(), "212,49".to_string()),
+        ("delete2".to_string(), "212,50".to_string()),
+        ("pause0".to_string(), "208,48".to_string()),
+        ("pause1".to_string(), "208,49".to_string()),
+        ("pause2".to_string(), "208,50".to_string()),
+        ("os0".to_string(), "131,48".to_string()),
+        ("os1".to_string(), "131,49".to_string()),
+        ("os2".to_string(), "131,50".to_string()),
+        ("enter0".to_string(), "224,48".to_string()),
+        ("enter1".to_string(), "224,49".to_string()),
+        ("enter2".to_string(), "224,50".to_string()),
+        ("Back0".to_string(), "178,48".to_string()),
+        ("Back1".to_string(), "178,49".to_string()),
+        ("Back2".to_string(), "178,50".to_string()),
+        ("space0".to_string(), "32,48".to_string()),
+        ("space1".to_string(), "32,49".to_string()),
+        ("space2".to_string(), "32,50".to_string()),
+    ];
+
+      table.iter()
+        .find(|&(key, _)| key == string)
+        .map(|(_, value)| value.to_string())
+        .unwrap_or_else(|| "0".to_string())
+}
+
+
+
+
+
+
 fn get_last_digit(s: &str) -> Option<char> {
     if s.is_empty() {
         return None; // Handle empty strings
@@ -1123,6 +1204,8 @@ fn remove_last_char(s: &str) -> String {
     s[..s.len() - 1].to_string() // Create a new string from the beginning up to the second-to-last character
 }
 fn ascii_number_string_to_char(ascii_number_string: &str) -> Option<String> {
+
+
     // Parse the ASCII number string into an integer
     let ascii_number = ascii_number_string.parse::<u8>().ok()?;
 
@@ -1132,23 +1215,29 @@ fn ascii_number_string_to_char(ascii_number_string: &str) -> Option<String> {
         let ascii_char = char::from_u32(ascii_number as u32).unwrap();
         Some(ascii_char.to_string())
     } else {
-        None
+        let table = [
+            ("129".to_string(), "shift".to_string()),
+            ("128".to_string(), "ctrl".to_string()),
+            ("193".to_string(), "caps".to_string()),
+            ("179".to_string(), "tab".to_string()),
+            ("130".to_string(), "alt".to_string()),
+            ("177".to_string(), "esc".to_string()),
+            ("209".to_string(), "insert".to_string()),
+            ("212".to_string(), "delete".to_string()),
+            ("208".to_string(), "pause".to_string()),
+            ("131".to_string(), "os".to_string()),
+            ("224".to_string(), "enter".to_string()),
+            ("178".to_string(), "Back".to_string()),
+            ("32".to_string(), "space".to_string()),
+        ];
+
+         Some( table.iter()
+            .find(|&(key, _)| key == ascii_number_string)
+            .map(|(_, value)| value.to_string())
+            .unwrap_or_else(|| "0".to_string()))
     }
 }
-fn string_to_ascii_number(ascii_string: &str) -> Option<u8> {
-    // Parse the ASCII string into a u8 (unsigned 8-bit integer)
-    match ascii_string.parse::<u8>() {
-        Ok(ascii_number) => {
-            // Ensure the parsed ASCII number is within the valid range (0-127)
-            if ascii_number >= 0 && ascii_number <= 127 {
-                Some(ascii_number)
-            } else {
-                None
-            }
-        }
-        Err(_) => None, // Handle parsing errors gracefully
-    }
-}
+
 
 
 
@@ -1515,72 +1604,6 @@ fn draw_textbox(c: &Context, g: &mut G2d,position: &Point2d, size: &Point2d, key
 
 
 
-fn draw_textbox_profile(c: &Context, g: &mut G2d,position: &Point2d, size: &Point2d, keypressed: Key,current_str: &String,mouse_position:[f64; 2], mouse:bool,index:&usize) -> String
-{
-    let mut textbox_held_index = textbox_held.lock().unwrap();
-    let mut updated_str = current_str.to_string();
-    let mut key_down = is_key_down.lock().unwrap();
-    if(mouse){
-        if(Button::is_point_in_rectangle(
-            &Point2d {
-             point_x: mouse_position[0],
-             point_y: mouse_position[1],
-            },
-            position,
-            size)){
-               *textbox_held_index = (index +1)
-            }
-            if(!Button::is_point_in_rectangle(
-                &Point2d {
-                 point_x: mouse_position[0] ,
-                 point_y: mouse_position[1],
-                },
-                position,
-                size)){
-                    if(  *textbox_held_index == (index +1)){
-                   *textbox_held_index = 0;
-                    }
-                }
-
-        }
-        if((index +1)== *textbox_held_index){
-    match keypressed {
-        Key::Backspace => {
-            if(*key_down == false){
-            updated_str.pop();
-            updated_str.pop();
-            *key_down = true;
-            }
-        },
-        Key::Unknown => {
-            *key_down = false;
-        },
-        Key::Return => {
-            // Do nothing, or handle Enter key as needed
-        },
-        _ => {
-            if(*key_down == false){
-            if let Some(ch) = key_to_char(keypressed) {
-                *key_down = true;
-                updated_str.push(ch);
-                updated_str.push('0');
-            }
-        }
-        },
-    }
-}
-    rectangle([0.5,0.2,0.2, 1.0], // red
-          [position.point_x, position.point_y, size.point_x, size.point_y],
-          c.transform, g);
-
-    Draw_text::draw_text(&c, g, &extract_every_second_char(&updated_str), position,  &Color {
-        red: 100.0,
-        green: 0.0,
-        blue: 0.0,
-        transperency: 1.0,
-    }, 2.0);
-   return(updated_str);
-}
 
 
 
@@ -1931,7 +1954,7 @@ fn Add_profile(c: &Context, g: &mut G2d,mouse_position:[f64; 2], button_down:boo
                             }
 
                             let file_path = folder_path.join("Profile.txt");
-                            fs::write(file_path, "97,105,100,97,110,32,108,97,100,97,97,97,97-99,97,114,103,111,32,114,117,110,97,97,99,97,97,97-108-106-109-97-97-97-97-98-98-98-98-97-98-98-98-98-99-99-99-99-99-99-99-99-106-200-200-200-200-200-150-150-150-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-").expect("Failed to write to file");
+                            fs::write(file_path, "---------------------------200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-200-").expect("Failed to write to file");
                             modes.push(name.to_string());
 
                             *mouse_down = true;
@@ -1965,7 +1988,7 @@ fn Convert_vecs_to_string() -> String
 
     for mode in (*mode1).iter()
     {
-        let mut result = insert_commas(mode);
+        let mut result = mode;
 
 
         return_str += &result;
@@ -1973,13 +1996,13 @@ fn Convert_vecs_to_string() -> String
     }
     for mode in (*mode2).iter()
     {
-            let mut result = insert_commas(mode);
+            let mut result = mode;
         return_str += &result;
         return_str += "-"
     }
     for mode in (*mode3).iter()
     {
-            let mut result = insert_commas(mode);
+            let mut result = mode;
         return_str += &result;
         return_str += "-"
     }

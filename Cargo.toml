@@ -13,3 +13,4 @@ piston2d-opengl_graphics = "0.84.0"
 piston_window = "0.131.0"
 serialport = "4.5.0"
 image = "0.24.3" # or the latest version
+self_update = "0.41.0"

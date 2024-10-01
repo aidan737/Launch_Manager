@@ -52,12 +52,12 @@ pub fn draw_Macropad_icon(c: &Context, g: &mut G2d,index: usize)
 
 
 
-fn draw_button(c: &Context, g: &mut G2d,position:Point2d, letter: char)
+fn draw_button(c: &Context, g: &mut G2d,position:Point2d, letter: String)
 {
         rectangle([0.2,0.2,0.2, 1.0], // red
         [position.point_x, position.point_y, 140.0, 140.0],
             c.transform, g);
-            Draw_sprite::draw_text(&c, g, &letter.to_string(), &Point2d {
+            Draw_sprite::draw_text(&c, g, &letter, &Point2d {
              point_x: position.point_x + 40.0,
              point_y: position.point_y + 40.0,
             },  &Color {
@@ -331,6 +331,47 @@ pub fn is_point_in_rectangle(point: &Point2d, rect_point: &Point2d,size: &Point2
 }
 
 
-fn get_first_char(s: &String) -> char {
-    s.chars().next().unwrap_or(' ')
+fn get_first_char(s: &String) -> String {
+    let mut groups: Vec<&str> = s.split(",").collect();
+    if(groups[0] != ""){
+        return ascii_number_string_to_char(groups[0]).expect("REASON").chars().next().unwrap_or(' ').to_string();
+
+}else
+{
+    return "".to_string();
+}
+}
+fn ascii_number_string_to_char(ascii_number_string: &str) -> Option<String> {
+
+
+    // Parse the ASCII number string into an integer
+    let ascii_number = ascii_number_string.parse::<u8>().ok()?;
+
+    // Check if the ASCII number is within the valid range (0-127)
+    if 0 <= ascii_number && ascii_number <= 127 {
+        // Convert the ASCII number to a character and then to a string
+        let ascii_char = char::from_u32(ascii_number as u32).unwrap();
+        Some(ascii_char.to_string())
+    } else {
+        let table = [
+        ("129".to_string(), "shift".to_string()),
+        ("128".to_string(), "ctrl".to_string()),
+        ("193".to_string(), "caps".to_string()),
+        ("179".to_string(), "tab".to_string()),
+        ("130".to_string(), "alt".to_string()),
+        ("177".to_string(), "esc".to_string()),
+        ("209".to_string(), "insert".to_string()),
+        ("212".to_string(), "delete".to_string()),
+        ("208".to_string(), "pause".to_string()),
+        ("131".to_string(), "os".to_string()),
+        ("224".to_string(), "enter".to_string()),
+        ("178".to_string(), "Back".to_string()),
+        ("32".to_string(), "space".to_string()),
+        ];
+
+         Some( table.iter()
+            .find(|&(key, _)| key == ascii_number_string)
+            .map(|(_, value)| value.to_string())
+            .unwrap_or_else(|| "0".to_string()))
+    }
 }

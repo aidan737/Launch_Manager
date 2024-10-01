@@ -222,3 +222,23 @@ polygon([1.0, 1.0, 1.0, 1.0], &triangle7, c.transform, g);
 fn is_mouse_in_box(mouse_x: f64, mouse_y: f64, box_x: f64, box_y: f64, box_width: f64, box_height: f64) -> bool {
     mouse_x >= box_x && mouse_x < box_x + box_width && mouse_y >= box_y && mouse_y < box_y + box_height
 }
+
+
+
+
+
+
+use self_update::cargo_crate_version;
+
+fn update() -> Result<(), Box<::std::error::Error>> {
+    let status = self_update::backends::github::Update::configure()
+        .repo_owner("jaemk")
+        .repo_name("self_update")
+        .bin_name("github")
+        .show_download_progress(true)
+        .current_version(cargo_crate_version!())
+        .build()?
+        .update()?;
+    println!("Update status: `{}`!", status.version());
+    Ok(())
+}
