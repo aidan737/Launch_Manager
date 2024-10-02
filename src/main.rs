@@ -4,6 +4,9 @@ pub use piston_window::*;
 
 
 pub fn start_window(title:&str,width: f64, hight: f64) -> PistonWindow {
+
+
+
     let mut window: PistonWindow =
     WindowSettings::new(title, [width, hight])
     .exit_on_esc(true).resizable(false).decorated(false).build().unwrap();
@@ -18,6 +21,8 @@ pub fn clear_screen(c: &Context, g: &mut G2d) {
 
 
 fn main() {
+
+    update();
     let mut dragging = false;
     let mut drag_offset = [0, 0];
     let mut window: PistonWindow = start_window("Launch Editor",1000.0, 690.0);
@@ -228,17 +233,70 @@ fn is_mouse_in_box(mouse_x: f64, mouse_y: f64, box_x: f64, box_y: f64, box_width
 
 
 
-use self_update::cargo_crate_version;
+use reqwest::blocking::Client;
+use std::fs::File;
+use std::io::Write;
+fn update() {
+    let download_url = "https://drive.google.com/uc?export=download&id=1elIulkRI0rajvZaNiroGiE426F0gLuUK";
+    let current_version = "0.0.2";
+      let local_file_path = "Update.zip";
+   // Download the EXE file
 
-fn update() -> Result<(), Box<::std::error::Error>> {
-    let status = self_update::backends::github::Update::configure()
-        .repo_owner("jaemk")
-        .repo_name("self_update")
-        .bin_name("github")
-        .show_download_progress(true)
-        .current_version(cargo_crate_version!())
-        .build()?
-        .update()?;
-    println!("Update status: `{}`!", status.version());
-    Ok(())
+   let result = download_file(download_url);
+
+   match result {
+       Ok(content) => {   println!("{ }", String::from_utf8_lossy(&content));
+          // Save the downloaded EXE file
+          if(String::from_utf8_lossy(&content) != current_version)
+          {
+              //now update
+                  let download_url2 = "https://drive.google.com/uc?export=download&id=1oxZNWuhq5cdzioSc1RIWVTRr76RA13Lb";
+                  let response2= Client::new().get(download_url2).send().unwrap();
+                  let content2 = response2.bytes().unwrap();
+
+                  let mut file = File::create(local_file_path).unwrap();
+                  file.write_all(&content2).unwrap();
+                  updateexe(&(r"Update\Launch_Manager.exe"));
+
+
+
+
+          }
+      },
+       Err(error) => println!("Error downloading file: {}", error),
+   }
+
+
+}
+
+fn download_file(url: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let mut response = client.get(url).send()?;
+    let mut content = Vec::new();
+    response.read_to_end(&mut content)?;
+
+    Ok(content)
+}
+
+use update_me;
+use zip_extensions::*;
+use std::io::Read;
+use std::path::PathBuf;
+use std::str::FromStr;
+pub fn updateexe(path: &str) {
+
+extract_entry_to_memory();
+
+
+}
+fn extract_entry_to_memory() {
+    let archive_file = PathBuf::from_str(r#"Update.zip"#);
+    let entry_path = PathBuf::from_str("Launch_Manager.exe");
+
+    let mut buffer : Vec<u8> = vec![];
+    match zip_extract_file_to_memory(&archive_file.unwrap(), &entry_path.unwrap(), &mut buffer) {
+        Ok(()) => { println!("Extracted {} bytes from archive.", buffer.len()) },
+        Err(e) => { println!("The entry does not exist.") }
+    };
+    update_me::apply(&mut buffer);
 }
